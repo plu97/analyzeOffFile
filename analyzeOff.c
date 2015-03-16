@@ -16,7 +16,6 @@ int main(int argc, char **argv){
   FILE* fp;
   char line[MAX_CHAR];
   int flag = 0;
-  int exitFlag = 0;
   int vertexCount = 0;
   int faceCount = 0;
   int currentVertex = 0;
@@ -42,7 +41,7 @@ int main(int argc, char **argv){
     exit(1);
   }
   
-  while (fgets(line, MAX_CHAR, fp) && !exitFlag) { //main loop
+  while (fgets(line, MAX_CHAR, fp)) { //main loop
     switch(flag) {
 
     case 0: //ensure that this is a proper OFF file
@@ -51,7 +50,7 @@ int main(int argc, char **argv){
       }
       else {
 	printf("File is not recognized as an .off file.\n");
-	exitFlag = 1; 
+        exit(1);
       }
       break;
 
@@ -72,18 +71,20 @@ int main(int argc, char **argv){
     case 2: //read and push vertex information
       if (currentVertex >= vertexCount) {
 	flag = 3;
-	break;
+	//go to case 3 without reading new line
       }
 
-      if (sscanf(line, "%lf %lf %lf", &thisVertex.x, &thisVertex.y, &thisVertex.z) == 3) {
+      else if (sscanf(line, "%lf %lf %lf", &thisVertex.x, &thisVertex.y, &thisVertex.z) == 3) {
 	vertexArray[currentVertex] = thisVertex;
+	currentVertex++;
+	break;
       }
       else {
 	printf("Vertex %d cannot be read.\n", currentVertex);
+	exit(1);
       }
       
-      currentVertex++;
-      break;
+
     
     case 3: //analyze face
       if (currentFace >= faceCount) {
@@ -123,7 +124,8 @@ int main(int argc, char **argv){
   printf("Worst TaperY:\t%lf\n", worstTaperY);
 
 
-  fclose(fp);
+  if (fp == NULL) pass;
+  else fclose(fp);
 
   return 0;
 }
@@ -183,13 +185,20 @@ CREAnalysis analyze(Vertex vertices[4]) {
 
     e1 = 0.25 * (localCoord[0].x + localCoord[1].x + localCoord[2].x + localCoord[3].x);
     e2 = 0.25 * (-localCoord[0].x + localCoord[1].x + localCoord[2].x - localCoord[3].x);
-    e3 = 0.25 * (-localCoord[0].x + localCoord[1].x + localCoord[2].x + localCoord[3].x);
+    e3 = 0.25 * (-localCoord[0].x - localCoord[1].x + localCoord[2].x + localCoord[3].x);
     e4 = 0.25 * (localCoord[0].x - localCoord[1].x + localCoord[2].x - localCoord[3].x);
 
     f1 = 0.25 * (localCoord[0].y + localCoord[1].y + localCoord[2].y + localCoord[3].y);
     f2 = 0.25 * (-localCoord[0].y + localCoord[1].y + localCoord[2].y - localCoord[3].y);
-    f3 = 0.25 * (-localCoord[0].y + localCoord[1].y + localCoord[2].y + localCoord[3].y);
+    f3 = 0.25 * (-localCoord[0].y - localCoord[1].y + localCoord[2].y + localCoord[3].y);
     f4 = 0.25 * (localCoord[0].y - localCoord[1].y + localCoord[2].y - localCoord[3].y);
+
+    for (j=0; j<4;j++) {
+      printf("x%d:%lf y%d:%lf\n", j, localCoord[j].x, j, localCoord[j].y); 
+    }
+
+    printf("e2:%lf f3:%lf\n", e2, f3);
+    printf("e2/f3:%lf\tf3/e2:%lf\n", e2/f3, f3/e2);
 
     if (e2/f3 > f3/e2) result.AR = e2/f3;
     else result.AR = f3/e2;
