@@ -56,7 +56,7 @@ int main(int argc, char **argv){
 
     case 1: //read in OFF information
       if (sscanf(line, "%d %d %*d", &vertexCount, &faceCount) == 2) {
-	vertexArray = (Vertex*) malloc(vertexCount);
+	vertexArray = (Vertex*) malloc(vertexCount*sizeof(Vertex));
 	if (vertexArray == NULL) exit(1); //TODO error message
 	flag = 2;
       }
@@ -123,9 +123,13 @@ int main(int argc, char **argv){
   printf("Worst TaperX:\t%lf\n", worstTaperX);
   printf("Worst TaperY:\t%lf\n", worstTaperY);
 
+  if (fp == NULL);
+  else {
+    printf("%p", fp);
+    fclose(fp);
+  }
 
-  if (fp == NULL) pass;
-  else fclose(fp);
+  free(vertexArray);
 
   return 0;
 }
