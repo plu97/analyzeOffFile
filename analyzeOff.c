@@ -33,6 +33,7 @@ int main(int argc, char **argv){
   
   double totalAR = 0.0;
   double totalSkew = 0.0;
+  double totalSkewValue = 0.0;
 
   fp = fopen(argv[1], "r");
   
@@ -100,12 +101,13 @@ int main(int argc, char **argv){
       printf("%d\tAR: %lf\tSkew: %lf\tTaperX: %lf\tTaperY: %lf\n", currentFace, analysis.AR, analysis.skew, analysis.taperX, analysis.taperY);
 
       if (analysis.AR > worstAR) worstAR = analysis.AR;
-      if (analysis.skew > worstSkew) worstSkew = analysis.skew;
+      if (fabs(analysis.skew) > fabs(worstSkew)) worstSkew = analysis.skew;
       if (analysis.taperX > worstTaperX) worstTaperX = analysis.taperX;
       if (analysis.taperY > worstTaperY) worstTaperY = analysis.taperY;
 
       totalAR += analysis.AR;
       totalSkew += analysis.skew;
+      totalSkewValue += fabs(analysis.skew);
 
       currentFace++;
       break;
@@ -118,16 +120,15 @@ int main(int argc, char **argv){
 
   printf("Average AR:\t%lf\n", totalAR/faceCount);
   printf("Average skew:\t%lf\n", totalSkew/faceCount);
+  printf("Average skew value:\t%lf\n", totalSkewValue/faceCount);
   printf("Worst AR:\t%lf\n", worstAR);
   printf("Worst Skew:\t%lf\n", worstSkew);
   printf("Worst TaperX:\t%lf\n", worstTaperX);
   printf("Worst TaperY:\t%lf\n", worstTaperY);
 
   if (fp == NULL);
-  else {
-    printf("%p", fp);
-    fclose(fp);
-  }
+  else fclose(fp);
+  
 
   free(vertexArray);
 
@@ -201,8 +202,9 @@ CREAnalysis analyze(Vertex vertices[4]) {
       printf("x%d:%lf y%d:%lf\n", j, localCoord[j].x, j, localCoord[j].y); 
     }
 
-    printf("e2:%lf f3:%lf\n", e2, f3);
-    printf("e2/f3:%lf\tf3/e2:%lf\n", e2/f3, f3/e2);
+    //printf("e2:%lf\te3:%lf\tf2:%lf\tf3:%lf\n", e2, e3, f2, f3);
+    //printf("e2/f3:%lf\tf3/e2:%lf\n", e2/f3, f3/e2);
+    //printf("e3/f3:%lf\tf2/e2:%lf\n", e3/f3, f2/e2);
 
     if (e2/f3 > f3/e2) result.AR = e2/f3;
     else result.AR = f3/e2;
