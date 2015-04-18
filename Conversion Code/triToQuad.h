@@ -31,13 +31,13 @@ typedef struct {
 typedef struct {
     long left;
     long right;
-    long center;
+    long center; //id
 } OffMidpoint;
 
 int main();
 
-int midpointInList(Midpoint query, Midpoint* list, long size);
-int offMidpointInList(OffMidpoint query, OffMidpoint* list, long size);
+long midpointInList(Midpoint query, Midpoint* list, long size);
+long offMidpointInList(OffMidpoint query, OffMidpoint* list, long size);
 int vertexCmp(Vertex a, Vertex b);
 
 

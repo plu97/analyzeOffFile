@@ -32,7 +32,7 @@ int main(int argc, char **argv){
     Vertex* vertex; //list
     Vertex* centroids; //list
 
-    OffQuad* thisOffQuad;
+    OffQuad thisOffQuad;
 
     Vertex newVertex;
     Vertex centroid;
@@ -81,7 +81,7 @@ int main(int argc, char **argv){
         triangles = (Triangle*) malloc(sizeof(Triangle) * faceCount);
         vertex = (Vertex*) malloc(sizeof(Vertex) * vertexCount);
         midpoints = (Midpoint*) malloc(sizeof(Midpoint) * (1 + (2 * faceCount)));
-        offMidpoints = (OffMidpoint*) malloc(sizeof(OffMidpoint) * (1 + (2 * faceCount)));
+        offMidpoints = (OffMidpoint*) malloc(sizeof(OffMidpoint) * (1 + (2 * faceCount))); //max
 
         quads = (Quad*) malloc(sizeof(Quad) * 3 * faceCount);
         offQuads = (OffQuad*) malloc(sizeof(OffQuad) * 3 * faceCount);
@@ -122,19 +122,22 @@ int main(int argc, char **argv){
     for (i = 0; i < faceCount; i++) { 
 
         for (j=0; j<3; j++) { //calculate the midpoints of the triangle
-            thisOffMidpoint.left = offTriangles[i].vertex[j];
-            thisOffMidpoint.right = offTriangles[i].vertex[(j+1)%3];
+            offTriMidpoint[j].left = offTriangles[i].vertex[j];
+            offTriMidpoint[j].right = offTriangles[i].vertex[(j+1)%3];
 
-            if (offMidpointInList(thisOffMidpoint, offMidpoints, midpointPointer) != -1) { //midpoint exists in list!
-                offTriMidpoint[j] = offMidpointInList(thisOffMidpoint, offMidpoints, midpointPointer);
+            if (offMidpointInList(offTriMidpoint[j], offMidpoints, midpointPointer) != -1) { //midpoint exists in list!
+                long pos = offMidpointInList(offTriMidpoint[j], offMidpoints, midpointPointer);
+                offTriMidpoint[j].center = pos;
             }
             else { //midpoint doesn't exist in list!
-                offMidpoints[midpointPointer] = thisOffMidpoint;
-                offTriMidpoint[j] = midpointPointer;
+                offTriMidpoint[j].center = midpointPointer;
+                offMidpoints[midpointPointer] = offTriMidpoint[j];
                 midpointPointer++;
             }
         }
 
+        centroid.x = 0;
+        centroid.y = 0;
         for (j = 0; j<3; j++) { //calculating centroid
             centroid.x += triangles[i].vertex[j].x;
             centroid.y += triangles[i].vertex[j].y;        
@@ -149,10 +152,11 @@ int main(int argc, char **argv){
 
         for (j=0; j<3; j++) { //constructing quads
             //quad should be: Vertex, Midpoint, Centroid, Midpoint;
-            thisOffQuad.vertex[0] = vertexCount; 
-            thisOffQuad.vertex[1] = offTriMidpoint[j];
-            thisOffQuad.vertex[2] = centroid;
-            thisOffQuad.vertex[3] = offTriMidpoint[(j+2)%3]; //prior midpt
+            //note that points are ordered from triFile vertices, to constructed centroids, to midpoints
+            thisOffQuad.vertex[0] = offTriangles[i].vertex[j]; 
+            thisOffQuad.vertex[1] = vertexCount + faceCount + offTriMidpoint[j].center;
+            thisOffQuad.vertex[2] = vertexCount + centroidPointer;
+            thisOffQuad.vertex[3] = vertexCount + faceCount + offTriMidpoint[(j+2)%3].center; //prior midpt
             offQuads[quadPointer] = thisOffQuad;
             quadPointer++;
         }   
@@ -186,14 +190,38 @@ int main(int argc, char **argv){
         */
     }
     
+    fprintf(quadFile, "%ld %ld 0\n", vertexCount + centroidPointer + midpointPointer, quadPointer); //second line of quadFile
+
+    //writing vertices
+    for (i=0; i<vertexCount; i++) { //old points from triFile
+        fprintf(quadFile, "%lf %lf 0.0\n", vertex[i].x, vertex[i].y);
+    }
+    for (i=0; i<centroidPointer; i++) { //centroids
+        fprintf(quadFile, "%lf %lf 0.0\n", centroids[i].x, centroids[i].y);
+    }
+    for (i=0; i<midpointPointer; i++) { //midpoints //TODO: check
+        double x = (vertex[offMidpoints[i].left].x + vertex[offMidpoints[i].right].x) / 2;
+        double y = (vertex[offMidpoints[i].left].y + vertex[offMidpoints[i].right].y) / 2; 
+
+        fprintf(quadFile, "%lf %lf 0.0\n", x, y);
+    }
+    //writing quads
+    for (i=0; i<quadPointer; i++) {
+        fprintf(quadFile, "4 %ld %ld %ld %ld\n", 
+            offQuads[i].vertex[0],
+            offQuads[i].vertex[1],
+            offQuads[i].vertex[2],
+            offQuads[i].vertex[3]);
+
+    }
 
 
 
     return 0;
 }
 
-int midpointInList(Midpoint query, Midpoint* list, long size){
-    int i;
+long midpointInList(Midpoint query, Midpoint* list, long size){
+    long i;
 
     for (i=0; i<size; i++) {
         if (vertexCmp(query.left, list[i].left) && vertexCmp(query.right, list[i].right)) return i;
