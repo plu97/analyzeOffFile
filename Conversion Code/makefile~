@@ -1,0 +1,13 @@
+all: pointToNode eleNodeToOff triToQuad
+
+pointToNode: pointToNode.c
+	gcc pointToNode.c -g -lm -o pointToNode
+
+eleNodeToOff: eleNodeToOff.c
+	gcc eleNodeToOff.c -g -lm -o eleNodeToOff
+
+triToQuad: triToQuad.c
+	gcc triToQuad.c -g -lm -o triToQuad
+
+clean:
+	rm pointToNode eleNodeToOff

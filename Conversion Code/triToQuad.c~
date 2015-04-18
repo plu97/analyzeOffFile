@@ -1,0 +1,164 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include "triToQuad.h"
+
+#define MAX_CHAR 256
+#define DEBUG 0
+#define EPSILON 0.000001
+
+int main(int argc, char **argv){
+
+    FILE* triFile;
+    FILE* quadFile;
+    long maxTriangles;
+    long maxVertices;
+    char line[MAX_CHAR];
+    long vertexCount;
+    long faceCount;
+    Triangle* triangle;
+    OffTriangle* offTriangles;
+    Quad* quads;
+    OffQuad* offQuads;
+    OffQuad* thisOffQuad;
+    Vertex* vertex;
+    Vertex* centroids;
+    long centroidSize;
+    int i;
+    int j;
+    Vertex newVertex;
+    Vertex centroid;
+    Triangle newTriangle;
+    OffTriangle offTriangle;
+    long triVertex[3];
+    Midpoint* midpoints;
+    long midpointSize;
+    Midpoint triMidpoint[3];
+
+    long vertexNum[4];
+
+    midpointSize = 0;
+    centroidSize = 0;
+
+    if (argc != 3) {
+        printf("Usage: triToQuad [.OFF input file] [.OFF output file]\n");
+        return 1;
+    }
+
+    triFile = fopen(argv[1], "r");
+    quadFile = fopen(argv[2], "w");
+  
+    if (triFile == NULL) {
+        printf("Can't open file: %s\n", argv[1]);
+        exit(1);
+    }
+
+    fgets(line, MAX_CHAR, triFile); //gets first line
+    if (strcmp(line,"OFF\n") != 0) {
+        printf("File is not an .OFF file");
+    }
+
+    fprintf(quadFile, "OFF\n");
+
+    fgets(line, MAX_CHAR, triFile); //gets second line
+    if (sscanf(line, "%ld %ld %*d", &vertexCount, &faceCount) == 2) {
+        triangle = (Triangle*) malloc(sizeof(Triangle) * faceCount);
+        vertex = (Vertex*) malloc(sizeof(Vertex) * vertexCount);
+        midpoints = (Midpoint*) malloc(sizeof(Midpoint) * (1 + (2 * faceCount)));
+        quads = (Quad*) malloc(sizeof(Quad) * 3 * faceCount);
+        offQuads = (OffQuad*) malloc(sizeof(OffQuad) * 3 * faceCount);
+        centroids = (Vertex*) malloc(sizeof(Vertex) * faceCount);
+        offTriangles = (OffTriangle*) malloc(sizeof(OffTriangle) * faceCount);
+    }
+    else {
+        printf("Cannot parse face/vertex information.\n");
+    }
+
+    for (i = 0; i < vertexCount; i++) {
+        fgets(line, MAX_CHAR, triFile);
+        if (sscanf(line, "%lf %lf %*f", &newVertex.x, &newVertex.y)) {
+            vertex[i] = newVertex;
+        }
+        else {
+            printf("Not enough vertices?");
+        }
+    }
+
+    for (i = 0; i < faceCount; i++) {
+        fgets(line, MAX_CHAR, triFile);
+        if (sscanf(line, "3 %ld %ld %ld", &triVertex[0], &triVertex[1], &triVertex[2])) {
+            for (j = 0; j < 3; j++) {
+                newTriangle.vertex[j] = vertex[triVertex[j]];
+                offTriangle.vertex[j] = triVertex[j];
+            }
+        }
+        triangle[i] = newTriangle;
+    }
+
+    for (i = 0; i < faceCount; i++) {
+        for (j = 0; j<3; j++) {
+            centroid.x += triangle[i].vertex[j].x;
+            centroid.y += triangle[i].vertex[j].y;        
+        }   
+    
+        centroid.x /= 3;
+        centroid.y /= 3;
+
+        centroid[centroidSize] = centroid;
+
+        thisOffQuad.vertex[0] = vertexCount;
+
+        centroidSize++;
+
+
+
+        for (j = 0; j < 3; j++) {
+            newVertex.x = (triangle[i].vertex[j].x + triangle[i].vertex[(j+1)%3].x) / 2;
+            newVertex.y = (triangle[i].vertex[j].y + triangle[i].vertex[(j+1)%3].y) / 2;
+            
+            triMidpoints[j].center = newVertex;
+
+            triMidpoints[j].left = triangle[i].vertex[j];
+            triMidpoints[j].right = triangle[i].vertex[(j+1)%3];
+
+            if (midpointInList(triMidpoints[j], midpoints, midpointSize) == -1) {
+                midpoints[midpointSize] = triMidpoints[j];
+                triVertex[j] = vertexCount + faceCount + midpointSize;
+
+                midpointSize++;
+            }
+            else {
+                triVertex[j] = midpointInList(triMidpoints[j], midpoints, midpointSize);
+            }
+        }
+
+        thisOffQuad.vertex[1] = triVertex[1];
+    }
+    
+
+
+
+    return 0;
+}
+
+int midpointInList(Midpoint query, Midpoint* list, long size){
+    int i;
+
+    for (i=0; i<size; i++) {
+        if (vertexCmp(query.left, list[i].left) && vertexCmp(query.right, list[i].right)) return i;
+        if (vertexCmp(query.left, list[i].right) && vertexCmp(query.right, list[i].left)) return i;
+    }
+    return -1;
+}
+
+int vertexCmp(Vertex a, Vertex b) {
+    if (fabs(a.x - b.x) < EPSILON && fabs(a.y - b.y) < EPSILON) return 1;
+    else return 0;
+}
+
+
+
+
+
+
