@@ -6,7 +6,7 @@
 
 #define MAX_CHAR 256
 #define DEBUG 0
-#define VERBOSE 0
+#define VERBOSE 1
 
 int main(int argc, char **argv){
   if (argc != 2) {
@@ -111,8 +111,8 @@ int main(int argc, char **argv){
 
       if (analysis.AR > worstAR) worstAR = analysis.AR;
       if (fabs(analysis.skew) > fabs(worstSkew)) worstSkew = analysis.skew;
-      if (analysis.taperX > worstTaperX) worstTaperX = analysis.taperX;
-      if (analysis.taperY > worstTaperY) worstTaperY = analysis.taperY;
+      if (fabs(analysis.taperX) > worstTaperX) worstTaperX = analysis.taperX;
+      if (fabs(analysis.taperY) > worstTaperY) worstTaperY = analysis.taperY;
       if (fabs(analysis.jacobianDet) > fabs(worstDet)) worstDet = analysis.jacobianDet;
       if (fabs(analysis.modifiedDet) > fabs(worstModDet)) worstModDet = analysis.modifiedDet;
 
