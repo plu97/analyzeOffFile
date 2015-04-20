@@ -6,7 +6,6 @@
 
 #define MAX_CHAR 256
 #define DEBUG 0
-#define VERBOSE 0
 
 int main(int argc, char **argv){
   if (argc != 2) {
@@ -32,16 +31,10 @@ int main(int argc, char **argv){
   double worstSkew = 0.0;
   double worstTaperX = 0.0;
   double worstTaperY = 0.0;
-  double worstDet = 0.0;
-  double worstModDet = 0.0;
   
-  double totalTaperX = 0.0;
-  double totalTaperY = 0.0;
   double totalAR = 0.0;
   double totalSkew = 0.0;
   double totalSkewValue = 0.0;
-  double totalDet = 0.0;
-  double totalModDet = 0.0;
 
   fp = fopen(argv[1], "r");
   
@@ -68,8 +61,8 @@ int main(int argc, char **argv){
 	        vertexArray = (Vertex*) malloc(vertexCount*sizeof(Vertex));
 	        if (vertexArray == NULL) exit(1); //TODO error message
 	        flag = 2;
-        }
-        else {
+      }
+      else {
 	printf("Cannot read vertex/face count information from file.\n");
 	exit(1);
       }
@@ -106,23 +99,16 @@ int main(int argc, char **argv){
 	face[i] = vertexArray[faceIndex[i]];
       }
       analysis = analyze(face);
-      if (VERBOSE) printf("%d\tAR: %lf\tSkew: %lf\tTaperX: %lf\tTaperY: %lf\n", currentFace, analysis.AR, analysis.skew, analysis.taperX, analysis.taperY);
-      if (VERBOSE) printf("\tDeterminant: %lf \tModified Determinant: %lf\n\n", analysis.jacobianDet, analysis.modifiedDet);
+      printf("%d\tAR: %lf\tSkew: %lf\tTaperX: %lf\tTaperY: %lf\n", currentFace, analysis.AR, analysis.skew, analysis.taperX, analysis.taperY);
 
       if (analysis.AR > worstAR) worstAR = analysis.AR;
       if (fabs(analysis.skew) > fabs(worstSkew)) worstSkew = analysis.skew;
       if (analysis.taperX > worstTaperX) worstTaperX = analysis.taperX;
       if (analysis.taperY > worstTaperY) worstTaperY = analysis.taperY;
-      if (fabs(analysis.jacobianDet) > fabs(worstDet)) worstDet = analysis.jacobianDet;
-      if (fabs(analysis.modifiedDet) > fabs(worstModDet)) worstModDet = analysis.modifiedDet;
 
       totalAR += analysis.AR;
       totalSkew += analysis.skew;
       totalSkewValue += fabs(analysis.skew);
-      totalDet += fabs(analysis.jacobianDet);
-      totalModDet += fabs(analysis.modifiedDet);
-      totalTaperX += fabs(analysis.taperX);
-      totalTaperY += fabs(analysis.taperY);
 
       currentFace++;
       break;
@@ -136,16 +122,10 @@ int main(int argc, char **argv){
   printf("Average AR:\t%lf\n", totalAR/faceCount);
   printf("Average skew:\t%lf\n", totalSkew/faceCount);
   printf("Average skew value:\t%lf\n", totalSkewValue/faceCount);
-  printf("Average taperX:\t%lf\n", totalTaperX/faceCount);
-  printf("Average taperY:\t%lf\n", totalTaperY/faceCount);
-  printf("Average Jacobian Determinant:\t%lf\n", totalDet/faceCount);
-  printf("Average Modified Determinant:\t%lf\n", totalModDet/faceCount);
   printf("Worst AR:\t%lf\n", worstAR);
   printf("Worst Skew:\t%lf\n", worstSkew);
   printf("Worst TaperX:\t%lf\n", worstTaperX);
   printf("Worst TaperY:\t%lf\n", worstTaperY);
-  printf("Worst Determinant:\t%lf\n", worstDet);
-  printf("Worst Modified Determinant:\t%lf\n", worstModDet);
 
   if (fp == NULL);
   else fclose(fp);
@@ -250,8 +230,7 @@ CREAnalysis analyze(Vertex vertices[4]) {
     result.skew = e3/f3;
     result.taperX = f4/f3;
     result.taperY = e4/e2;
-    result.jacobianDet = pow(f3, 2) * result.AR * (1 + (result.taperX) + (result.taperY - (result.taperX *(result.skew/result.AR))));
-    result.modifiedDet = result.AR * (1 + fabs(result.taperX) + (fabs(result.taperY) - (fabs(result.taperX) *(result.skew/result.AR))));
+    result.jacobianDet = pow(f3, 2) * result.AR;
 
     return result;
     //printf("holy shit this worked %lf", v06.x);

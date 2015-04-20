@@ -17,7 +17,6 @@ typedef struct {
   double taperX;
   double taperY;
   double jacobianDet;
-  double modifiedDet;
 } CREAnalysis;
 
 int main();
